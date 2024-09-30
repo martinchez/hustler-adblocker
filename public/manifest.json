@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Simple Ad Blocker",
+  "name": "Hustler Ad Blocker",
   "version": "1.0",
-  "description": "A simple ad blocker created using React.",
+  "description": "A Hustler ad blocker created using React.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "background": {
