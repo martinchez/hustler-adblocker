@@ -1,53 +1,35 @@
 import React, { useState, useEffect } from 'react'
+import { chromeAPI } from './chromeAPI'
+import './App.css'
 
 function App() {
-  const [whitelist, setWhitelist] = useState([])
-  const [currentSite, setCurrentSite] = useState('')
+  const [isEnabled, setIsEnabled] = useState(false)
 
-  // Get the current tab's domain
   useEffect(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const url = new URL(tabs[0].url)
-      setCurrentSite(url.hostname)
-    })
-
-    // Load whitelist from Chrome storage
-    chrome.storage.sync.get(['whitelist'], (result) => {
-      if (result.whitelist) {
-        setWhitelist(result.whitelist)
-      }
+    chromeAPI.storage.sync.get(['adBlockerEnabled'], (result) => {
+      setIsEnabled(result.adBlockerEnabled || false)
     })
   }, [])
 
-  // Add current site to whitelist
-  const addToWhitelist = () => {
-    const updatedWhitelist = [...whitelist, currentSite]
-    setWhitelist(updatedWhitelist)
-    chrome.storage.sync.set({ whitelist: updatedWhitelist })
-  }
-
-  // Remove site from whitelist
-  const removeFromWhitelist = (site) => {
-    const updatedWhitelist = whitelist.filter((s) => s !== site)
-    setWhitelist(updatedWhitelist)
-    chrome.storage.sync.set({ whitelist: updatedWhitelist })
+  const toggleAdBlocker = () => {
+    const newState = !isEnabled
+    setIsEnabled(newState)
+    chromeAPI.storage.sync.set({ adBlockerEnabled: newState })
+    chromeAPI.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chromeAPI.tabs.sendMessage(tabs[0].id, {
+        action: 'toggleAdBlocker',
+        isEnabled: newState,
+      })
+    })
   }
 
   return (
     <div className="App">
-      <h2>Ad Blocker</h2>
-      <p>Current Site: {currentSite}</p>
-      <button onClick={addToWhitelist}>Whitelist this site</button>
-
-      <h3>Whitelisted Sites</h3>
-      <ul>
-        {whitelist.map((site) => (
-          <li key={site}>
-            {site}{' '}
-            <button onClick={() => removeFromWhitelist(site)}>Remove</button>
-          </li>
-        ))}
-      </ul>
+      <h1>Simple Ad Blocker</h1>
+      <button onClick={toggleAdBlocker}>
+        {isEnabled ? 'Disable Ad Blocker' : 'Enable Ad Blocker'}
+      </button>
+      <p>Ad Blocker is currently {isEnabled ? 'enabled' : 'disabled'}.</p>
     </div>
   )
 }
